@@ -256,7 +256,7 @@ class SegmentTree:
 #            node.value = self.merge(self.update(self.tree[node.index*2+1], start, midpoint, updates[start:midpoint]),
 #                                    self.update(self.tree[node.index*2+2], midpoint+1, end, updates[midpoint+1:end]))
     
-    def update_value(self, node, data_index, difference):
+    def update(self, node, data_index, difference):
         """
         This function updates the segment tree when a single data point is updated
         from the input set. The 'difference' value should be calculated outside of this
@@ -283,8 +283,9 @@ class SegmentTree:
             return
         else:
             node.value = node.value + difference
-            self.update(self.tree[node.index*2+1], data_index, difference)
-            self.update(self.tree[node.index*2+2], data_index, difference)
+            if not node.start == node.end:
+                self.update(self.tree[node.index*2+1], data_index, difference)
+                self.update(self.tree[node.index*2+2], data_index, difference)
             return node
     
 if __name__ == "__main__":
@@ -293,3 +294,5 @@ if __name__ == "__main__":
     print(list(map(str, tree.tree)))
     print(str(tree.query(tree.tree[0], 1, 4)))
     print(str(tree.query(tree.tree[0], 1, 1)))
+    tree.update(tree.tree[0], 3, -1)
+    print(list(map(str, tree.tree)))
