@@ -84,24 +84,30 @@ class SegmentTree:
     of the SegmentNode object. In those cases, the merge function can be overridden.
     
     Attributes:
-        data (list):    The input data on which queries will be executed.
-        tree (list):    The data structure that contains the constructed
-                        segment tree.
+        data (list):            The input data on which queries will be executed.
+        tree (list):            The data structure that contains the constructed
+                                segment tree.
+        node_type (function):   A reference to a SegmentNode constructor. This allows
+                                different SegmentNode subclasses to be used with SegmentTree
     """
     
-    def __init__(self, data):
+    def __init__(self, data, node_type):
         """
         This constructor performs the initial construction of the segment tree. It first
         allocates enough memory to hold the tree structure, and then delegates to the 
         recursive build() function to perform tree construction.
         
         Args:
-            data (list): The input data to build the tree from.
+            data (list):            The input data to build the tree from.
+            node_type (function):   A reference to the SegmentNode constructor. This
+                                    allows SegmentTree to operate on any subclass of
+                                    SegmentNode.
         """
         # The space complexity of a segment tree is O(2^log(n)). Use math.ceil() 
         # to round decimal logarithms up to the nearest integer. 
         self.tree = [None]*2*int(math.pow(2, math.ceil(math.log(len(data), 2))))
         self.data = data
+        self.node_type = node_type
         # The build function takes three parameters: the start and end indices of the 
         # interval, and the tree index of the next node to build. Since this is the
         # initialization, we are building the root node which contains the entire
@@ -145,12 +151,12 @@ class SegmentTree:
                             cases.
         """
         if start == end:
-            self.tree[current_index] = SegmentNode(self.data[start], start, end, current_index)
+            self.tree[current_index] = self.node_type(self.data[start], start, end, current_index)
             return self.tree[current_index]
         else:
             midpoint = int((start+end)/2)
-            self.tree[current_index] = SegmentNode(self.merge(self.build(start, midpoint, current_index*2+1),
-                                                   self.build(midpoint+1, end, current_index*2+2)), start, end, current_index)
+            self.tree[current_index] = self.node_type(self.merge(self.build(start, midpoint, current_index*2+1),
+                                                      self.build(midpoint+1, end, current_index*2+2)), start, end, current_index)
             return self.tree[current_index]        
 
     def query(self, node, start, end):
@@ -288,7 +294,7 @@ class SegmentTree:
     
 if __name__ == "__main__":
     data = [-1, 3, 4, 0, 2, 1]
-    tree = SegmentTree(data)
+    tree = SegmentTree(data, SegmentNode)
     print(list(map(str, tree.tree)))
     print(str(tree.query(tree.tree[0], 1, 4)))
     print(str(tree.query(tree.tree[0], 1, 1)))
