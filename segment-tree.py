@@ -145,10 +145,7 @@ class SegmentTree:
             current_index (int):    The location inside of the segment tree to place the node.
             
         Returns:
-            (SegmentNode):  The node object that is placed inside of the segment tree. In 
-                            practicality, the function behaves as a void function, but the node
-                            is returned for convenience in case it is appropriate for future use
-                            cases.
+            (SegmentNode):  The node object that is placed inside of the segment tree.
         """
         if start == end:
             self.tree[current_index] = self.node_type(self.data[start], start, end, current_index)
