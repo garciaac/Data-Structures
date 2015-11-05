@@ -222,25 +222,70 @@ class SegmentTree:
         """
         return left_node + right_node
     
-    # TODO: Change to include a sub-interval update
-    def update(self, node, data_index, difference):
+    def update_interval(self, node, start, end, updates):
         """
+        I'M NOT SURE THIS IS POSSIBLE.
+        
         This recursive function performs an update to the segment tree when values in the data
         set change. If the indices of the value changes are not contiguous, each needs to be
         treated as its own sub-interval of contiguous indices. For example, if [1,4] and [5,8]
         are updated, the entire update can be treated as the contiguous interval of [1,8]. However,
         if the updates are over the intervals [1,4] and [6,8], then the update() function needs to be
-        called separately for both intervals. 
+        called separately for both intervals.
+        
+        Updates are made in the following manner:
+        
+        NOTE: 'start' and 'end' are the beginning and ending indices of the sub-interval of the data set.
+        
+        If the current node's interval lies completely outside the sub-interval, it doesn't need to 
+        be updated.
+        
+        Otherwise, if there is only one update to make (start == end), update the current node's value
+        with the updated value.
+        
+        Otherwise, 
+        """
+        pass
+#        if node.end < start or node.start > end:
+#            return
+#        elif start == end:
+#            node.value = updates[start]
+#            return node
+#        else:
+#            midpoint = (start + end) / 2
+#            node.value = self.merge(self.update(self.tree[node.index*2+1], start, midpoint, updates[start:midpoint]),
+#                                    self.update(self.tree[node.index*2+2], midpoint+1, end, updates[midpoint+1:end]))
+    
+    def update_value(self, node, data_index, difference):
+        """
+        This function updates the segment tree when a single data point is updated
+        from the input set. The 'difference' value should be calculated outside of this
+        function. For each node that contains the data point inside of its interval, 
+        the difference value is added to the node's value. This function works well for
+        merges such as sums where the change to each node's value can be predicted without
+        knowing the node's value first. For merges such as minimum value of sub-intervals
+        that depend on knowing the node's value, the update_interval function should be used
+        since it utilizes the merge() function to re-build sections of the tree.
         
         Args:
-            
+            node (SegmentNode): The node to apply the update to.
+            data_index (int):   The index in the data set that was updated.
+            difference (int):   The value to be added to each node's value. This type may change
+                                with different types of SegmentNodes.
+        Returns:
+            SegmentNode:    The current node of the tree. In practicality, this is a void function,
+                            but the node is returned as a convenience for future use cases
         """
+        
+        # If the data_index is not within the node's interval, then the node does not need
+        # to be updated.
         if data_index < node.start or data_index > node.end:
             return
         else:
-            node.value = node.value + difference # Maybe use a merge function here on two nodes?
+            node.value = node.value + difference
             self.update(self.tree[node.index*2+1], data_index, difference)
             self.update(self.tree[node.index*2+2], data_index, difference)
+            return node
     
 if __name__ == "__main__":
     data = [-1, 3, 4, 0, 2, 1]
