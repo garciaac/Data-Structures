@@ -14,16 +14,9 @@ class SegmentNode:
                             in subclasses.
         start (int):        The starting index of the interval associated with this node.
         end (int):          The ending index of the interval associated with this node.
-        index (int):        The node's position inside of the array that stores the segment tree.
-        null_value (int):   This is the value that is returned when the node is completely outside
-                            of the query interval. When merged with another node, it should leave
-                            the other node's value unchanged. For example, in this implementation
-                            of segment tree, a merge is the sum of two nodes' values. Therefore, 
-                            null_value should be zero in order to leave another node's value
-                            unchanged in a merge. 
     """
     
-    def __init__(self, value, start, end, index):
+    def __init__(self, value, start, end):
         """
         This constructor performs the initialization of the tree node. 
         
@@ -31,14 +24,10 @@ class SegmentNode:
             value (int):    The value the node should hold.
             start (int):    The starting index of the query interval of the node.
             end (int):      The ending index of the query interval of the node.
-            index (int):    The position inside of the segment tree where the node
-                            is located.
         """
         self.value = value
         self.start = start
         self.end = end
-        self.index = index
-        self.null_value = 0
     
     # These are the operators that should be implemented in order to
     # allow Python standard algorithms to operate on tree nodes. For example,
@@ -47,38 +36,52 @@ class SegmentNode:
     # __str__ which governs how a node is printed to output.
     
     def __add__(self, other):
-        return self.value + other
+        if other is None:
+            return self
+        
+        if self.start < other.start:
+            start = self.start
+        else:
+            start = other.start
+            
+        if self.end > other.end:
+            end = self.end
+        else:
+            end = other.end
+            
+        value = self.value + other.value
+        return SegmentNode(value, start, end)
     
     def __radd__(self, other):
-        return self.value + other
+        return self + other
     
     def __lt__(self, other):
-        return self.value < other
+        return self.value < other.value
 
     def ___le__(self, other):
-        return self.value <= other
+        return self.value <= other.value
 
     def __eq__(self, other):
-        return self.value == other
+        return self.value == other.value
 
     def __ne__(self, other):
-        return self.value != other
+        return self.value != other.value
 
     def __gt__(self, other):
-        return self.value > other
+        return self.value > other.value
 
     def __ge__(self, other):
-        return self.value >= other
+        return self.value >= other.value
     
     def __str__(self):
-        return str(self.value)
+        return "\n".join(["Node","____","Value: ",str(self.value),"Start: ",str(self.start),"End: "+str(self.end)])
 
 class SegmentTree:
     """
     This class implements the data structure as well as the algorithms associated with
     segment trees. In general, this class should not be extended as it operates on
     generic SegmentNode objects. In order to change the behavior of a node merge, the
-    addition operator of the SegmentNode class should be overridden at which time, all
+    addition operator of the SegmentNode class should be overridden, at which time, all
     algorithms implemented in this class will function as intended. A merge function is
     supplied for the cases where a node merge may depend on contextual data outside
     of the SegmentNode object. In those cases, the merge function can be overridden.
@@ -105,7 +108,7 @@ class SegmentTree:
         """
         # The space complexity of a segment tree is O(2^log(n)). Use math.ceil() 
         # to round decimal logarithms up to the nearest integer. 
-        self.tree = [None]*2*int(math.pow(2, math.ceil(math.log(len(data), 2))))
+        self.tree = [None]*2*int(math.pow(2, math.ceil(math.log(len(data), 2)))) #Check this math
         self.data = data
         self.node_type = node_type
         # The build function takes three parameters: the start and end indices of the 
@@ -148,19 +151,19 @@ class SegmentTree:
             (SegmentNode):  The node object that is placed inside of the segment tree.
         """
         if start == end:
-            self.tree[current_index] = self.node_type(self.data[start], start, end, current_index)
+            self.tree[current_index] = self.node_type(self.data[start], start, end)
             return self.tree[current_index]
         else:
             midpoint = int((start+end)/2)
-            self.tree[current_index] = self.node_type(self.merge(self.build(start, midpoint, current_index*2+1),
-                                                      self.build(midpoint+1, end, current_index*2+2)), start, end, current_index)
+            self.tree[current_index] = self.merge(self.build(start, midpoint, current_index*2+1),
+                                                  self.build(midpoint+1, end, current_index*2+2))
             return self.tree[current_index]        
 
-    def query(self, node, start, end):
+    def query(self, current_index, start, end):
         """
         This recursive function executes a query on the original data set. The purpose of a 
         segment tree is to improve performance of queries over aribtrary sub-intervals of the
-        original data set. For example, in this implementation, a query over a sub-interval 
+        original data set. For example, in the default implementation, a query over a sub-interval 
         returns the sum of all values over that sub-interval. Another example is finiding the
         minimum value over an arbitrary sub-interval. 
         
@@ -170,7 +173,7 @@ class SegmentTree:
         to a query over the first half of the data set. The root's right child contains the answer
         to a query over the second half of the data set. Etc. 
         
-        The merge() function is what dictates the answer to a query. In this implementation, a query
+        The merge() function is what dictates the answer to a query. In the default SegmentNode, a query
         is the sum of a sub-interval, so the merge function adds two nodes' values together. If the
         query were to determine the minimum value of a sub-interval, the merge function would take
         the lesser of the two node values. For different types of queries, different types of SegmentNode
@@ -189,24 +192,25 @@ class SegmentTree:
         stack). 
         
         Otherwise, if the sub-interval lies completely outside the node's interval, then the node's
-        value should not be included in the query, and the node's null value is returned.
+        value should not be included in the query, and the a null value is returned.
         
         Otherwise, the current node's interval has a partial overlap with the sub-interval, so 
         the function will recurse on the left and right children until complete overlap of 
         intervals is reached.
         
         Args:
-            node(SegmentNode):  The node inside of the segment tree to query.
-            start (int):        The starting index of the sub-interval of the data set.
-            end (int):          The ending index of the sub-interval of the data set.
+            start (int):         The starting index of the sub-interval of the data set.
+            end (int):           The ending index of the sub-interval of the data set.
+            current_index (int): The node's position inside of the tree array.
         """
+        node = self.tree[current_index]
         if start <= node.start and end >= node.end:
-            return node.value
+            return node
         elif node.end < start or node.start > end:
-            return node.null_value
+            return None
         else:
-            return self.merge(self.query(self.tree[node.index*2+1], start, end),
-                              self.query(self.tree[node.index*2+2], start, end))
+            return self.merge(self.query(current_index*2+1, start, end),
+                              self.query(current_index*2+2, start, end))
     
     def merge(self, left_node, right_node):
         """
@@ -221,79 +225,69 @@ class SegmentTree:
             left_node (SegmentNode):    The first node to merge. left_node would win any ties with right_node
             right_node (SegmentNode):   The second node to merge.
         """
+#        print("Left Node is: "+str(left_node)+"\n")
+#        print("Right Node is: "+str(right_node)+"\n\n")
+#        if left_node is not None and right_node is None:
+#            return left_node
+#        elif left_node is None and right_node is not None:
+#            return right_node
+#        else:
         return left_node + right_node
     
-    def update_interval(self, node, start, end, updates):
+
+    def update(self, current_index, start, end, functor, *args):
         """
-        I'M NOT SURE THIS IS POSSIBLE.
+        This function updates the segment tree when a range of indices in the data set
+        should be updated. The actual update to perform is governed by the functor. When
+        using SegmentTree, a function should be implemented and passed into the functor 
+        parameter that will perform that actual update of the node. It could be as simple
+        as incrementing the node's value, or it could be more complicated if the node's
+        value is itself an object. 
         
-        This recursive function performs an update to the segment tree when values in the data
-        set change. If the indices of the value changes are not contiguous, each needs to be
-        treated as its own sub-interval of contiguous indices. For example, if [1,4] and [5,8]
-        are updated, the entire update can be treated as the contiguous interval of [1,8]. However,
-        if the updates are over the intervals [1,4] and [6,8], then the update() function needs to be
-        called separately for both intervals.
+        The way the tree is updated is as follows. It is very similar to the build function:
         
-        Updates are made in the following manner:
+        If the node's interval is completely outside of the query interval, then no update
+        needs to be performed, and the node is returned un-modified.
         
-        NOTE: 'start' and 'end' are the beginning and ending indices of the sub-interval of the data set.
+        Otherwise, if start == end, the node is a leaf node, and its value should be updated
+        by running functor on the node. 
         
-        If the current node's interval lies completely outside the sub-interval, it doesn't need to 
-        be updated.
+        Otherwise, recurse on the left and right children, which will propagate down to 
+        the leaves, and then re-build the relevant nodes as it comes back up the
+        recursion stack.
         
-        Otherwise, if there is only one update to make (start == end), update the current node's value
-        with the updated value.
-        
-        Otherwise, 
-        """
-        pass
-#        if node.end < start or node.start > end:
-#            return
-#        elif start == end:
-#            node.value = updates[start]
-#            return node
-#        else:
-#            midpoint = (start + end) / 2
-#            node.value = self.merge(self.update(self.tree[node.index*2+1], start, midpoint, updates[start:midpoint]),
-#                                    self.update(self.tree[node.index*2+2], midpoint+1, end, updates[midpoint+1:end]))
-    
-    def update(self, node, data_index, difference):
-        """
-        This function updates the segment tree when a single data point is updated
-        from the input set. The 'difference' value should be calculated outside of this
-        function. For each node that contains the data point inside of its interval, 
-        the difference value is added to the node's value. This function works well for
-        merges such as sums where the change to each node's value can be predicted without
-        knowing the node's value first. For merges such as minimum value of sub-intervals
-        that depend on knowing the node's value, the update_interval function should be used
-        since it utilizes the merge() function to re-build sections of the tree.
+        This algorithm works well when the update is something relative to the current
+        values of the nodes. E.g. subtract three from each value in between i and j where
+        i and j represent a sub-interval of the original data set.
         
         Args:
-            node (SegmentNode): The node to apply the update to.
-            data_index (int):   The index in the data set that was updated.
-            difference (int):   The value to be added to each node's value. This type may change
-                                with different types of SegmentNodes.
+            current_index (int): The node's position inside the tree array.
+            start (int):         The starting index of the subset.
+            end (int):           The ending index of the sebset.
+            functor (function):  The function to run on the node to modify the value.
+            args (placeholder):  This is a placeholder for the arguments to the functor.
         Returns:
             SegmentNode:    The current node of the tree. In practicality, this is a void function,
                             but the node is returned as a convenience for future use cases
         """
-        
-        # If the data_index is not within the node's interval, then the node does not need
-        # to be updated.
-        if data_index < node.start or data_index > node.end:
-            return
+        node = self.tree[current_index]
+        if end < node.start or start > node.end:
+            return node
+        elif start == end:
+            # Test this to make sure it actually changes the tree index
+            node = functor(node, args)
+            return node
         else:
-            node.value = node.value + difference
-            if not node.start == node.end:
-                self.update(self.tree[node.index*2+1], data_index, difference)
-                self.update(self.tree[node.index*2+2], data_index, difference)
+            midpoint = int((start+end)/2)
+            node = self.merge(self.update(current_index*2+1, start, midpoint, functor),
+                              self.update(current_index*2+2, midpoint+1, end, functor))
             return node
     
 if __name__ == "__main__":
     data = [-1, 3, 4, 0, 2, 1]
     tree = SegmentTree(data, SegmentNode)
-    print(list(map(str, tree.tree)))
-    print(str(tree.query(tree.tree[0], 1, 4)))
-    print(str(tree.query(tree.tree[0], 1, 1)))
+#    print(list(map(str, tree.tree)))
+    print(str(tree.query(0, 1, 4)))
+    print(str(tree.query(0, 1, 1)))
     tree.update(tree.tree[0], 3, -1)
     print(list(map(str, tree.tree)))
