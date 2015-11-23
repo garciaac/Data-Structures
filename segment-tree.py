@@ -274,49 +274,52 @@ class SegmentTree:
             SegmentNode:    The current node of the tree. In practicality, this is a void function,
                             but the node is returned as a convenience for future use cases
         """
-        # Something is going wrong here
-#/Users/andrew/Documents/Dev/Data Structures $ python3 segment-tree.py
-#['9', '6', '3', '2', '4', '2', '1', '-1', '3', 'None', 'None', '0', '2', 'None', 'None', 'None']
-#9
-#3
-#['9', '6', '2', '1', '3', '2', '1', '-1', '3', 'None', 'None', '0', '2', 'None', 'None', 'None']
-#/Users/andrew/Documents/Dev/Data Structures $ python3 segment-tree.py
-#['9', '6', '3', '2', '4', '2', '1', '-1', '3', 'None', 'None', '0', '2', 'None', 'None', 'None']
-#9
-#3
-#['9', '5', '3', '2', '4', '2', '1', '-1', '3', 'None', 'None', '0', '2', 'None', 'None', 'None']
-#/Users/andrew/Documents/Dev/Data Structures $ python3 segment-tree.py
-#['9', '6', '3', '2', '4', '2', '1', '-1', '3', 'None', 'None', '0', '2', 'None', 'None', 'None']
-#9
-#3
-#['9', '6', '3', '1', '3', '1', '1', '-1', '3', 'None', 'None', '0', '2', 'None', 'None', 'None']
-#/Users/andrew/Documents/Dev/Data Structures $ python3 segment-tree.py
-#['9', '6', '3', '2', '4', '2', '1', '-1', '3', 'None', 'None', '0', '2', 'None', 'None', 'None']
-#9
-#3
-#['9', '6', '3', '1', '3', '1', '1', '-1', '3', 'None', 'None', '0', '2', 'None', 'None', 'None']
-#/Users/andrew/Documents/Dev/Data Structures $
+        
+        # The algorithm itself works great. There are two problems:
+        #       1. The start and end parameters get out of sync with the node intervals
+        #       2. The values are correct inside the function, but the actual data structure
+        #           doesn't get updated every time
+        
+        # I'm not sure if this works. Some of the tree gets updated and some doesn't. The leaves work but that's it
         node = self.tree[current_index]
-        if end < node.start or start > node.end:
+        print("Starting value of node is: "+str(id(node)))
+#        print ("The current node's value is: "+str(node.value))
+#        print ("The range of the node is: "+str(node.start)+" through "+str(node.end))
+#        print ("The range of the function call is: "+str(start)+" through "+str(end))
+#        print ()
+        if start <= node.start and end >= node.end and node.start == node.end:
+                if len(args) != 0:
+                    self.tree[current_index] = functor(node, args)
+                else:
+#                    print ("The node is a leaf, and the value will be changed")
+#                    print ("The recursive interval is "+str(start)+" through "+str(end))
+#                    self.tree[current_index] = functor(node)
+                    node = functor(node)
+                    print("Ending value of node is: "+str(id(node)))
+#                    print("The new value is: "+str(node))
+#                    print ()
+                return self.tree[current_index]
+            
+        elif end < node.start or start > node.end:
+#            print ("The node doesn't need to be updated")
+#            print ()
             return node
-        elif start == end:
-            if len(args) != 0:
-                node = functor(node, args)
-            else:
-                node = functor(node)
-            return node
+            
         else:
-            midpoint = int((start+end)/2)
-            node = self.merge(self.update(current_index*2+1, start, midpoint, functor),
-                              self.update(current_index*2+2, midpoint+1, end, functor))
-            return node
+#            print ("The node isn't a leaf and no total overlap, so it will be merged with its children")
+#            self.tree[current_index] = self.merge(self.update(current_index*2+1, start, end, functor),
+            node = self.merge(self.update(current_index*2+1, start, end, functor),
+                                                  self.update(current_index*2+2, start, end, functor))
+#            print ("The new value is: "+str(node)+" for node "+str(node.start)+" through "+str(node.end))
+            print("Ending value of node is: "+str(id(node)))
+            return self.tree[current_index]
     
 if __name__ == "__main__":
     data = [-1, 3, 4, 0, 2, 1]
     tree = SegmentTree(data, SegmentNode)
     print(list(map(str, tree.tree)))
-    print(str(tree.query(0, 1, 4)))
-    print(str(tree.query(0, 1, 1)))
+#    print(str(tree.query(0, 1, 4)))
+#    print(str(tree.query(0, 1, 1)))
     
     def update_functor(node):
         node.value -= 1
