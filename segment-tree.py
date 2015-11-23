@@ -74,7 +74,8 @@ class SegmentNode:
         return self.value >= other.value
     
     def __str__(self):
-        return "\n".join(["Node","____","Value: ",str(self.value),"Start: ",str(self.start),"End: "+str(self.end)])
+#        return "\n".join(["Node","____","Value: ",str(self.value),"Start: ",str(self.start),"End: "+str(self.end)])
+        return str(self.value)
 
 class SegmentTree:
     """
@@ -107,8 +108,10 @@ class SegmentTree:
                                     SegmentNode.
         """
         # The space complexity of a segment tree is O(2^log(n)). Use math.ceil() 
-        # to round decimal logarithms up to the nearest integer. 
-        self.tree = [None]*2*int(math.pow(2, math.ceil(math.log(len(data), 2)))) #Check this math
+        # to round decimal logarithms up to the nearest integer. Since math.ceil()
+        # is used, reducing 2^log(n) to n is not mathematically valid. Reducing
+        # the math can result in 'index out of range' errors.
+        self.tree = [None]*2*int(math.pow(2, math.ceil(math.log(len(data), 2))))
         self.data = data
         self.node_type = node_type
         # The build function takes three parameters: the start and end indices of the 
@@ -234,7 +237,7 @@ class SegmentTree:
 #        else:
         return left_node + right_node
     
-
+# Indices seem to be accelerated by one
     def update(self, current_index, start, end, functor, *args):
         """
         This function updates the segment tree when a range of indices in the data set
@@ -242,7 +245,8 @@ class SegmentTree:
         using SegmentTree, a function should be implemented and passed into the functor 
         parameter that will perform that actual update of the node. It could be as simple
         as incrementing the node's value, or it could be more complicated if the node's
-        value is itself an object. 
+        value is itself an object. It is crucial that the return value of functor is of
+        type SegmentNode
         
         The way the tree is updated is as follows. It is very similar to the build function:
         
@@ -270,12 +274,36 @@ class SegmentTree:
             SegmentNode:    The current node of the tree. In practicality, this is a void function,
                             but the node is returned as a convenience for future use cases
         """
+        # Something is going wrong here
+#/Users/andrew/Documents/Dev/Data Structures $ python3 segment-tree.py
+#['9', '6', '3', '2', '4', '2', '1', '-1', '3', 'None', 'None', '0', '2', 'None', 'None', 'None']
+#9
+#3
+#['9', '6', '2', '1', '3', '2', '1', '-1', '3', 'None', 'None', '0', '2', 'None', 'None', 'None']
+#/Users/andrew/Documents/Dev/Data Structures $ python3 segment-tree.py
+#['9', '6', '3', '2', '4', '2', '1', '-1', '3', 'None', 'None', '0', '2', 'None', 'None', 'None']
+#9
+#3
+#['9', '5', '3', '2', '4', '2', '1', '-1', '3', 'None', 'None', '0', '2', 'None', 'None', 'None']
+#/Users/andrew/Documents/Dev/Data Structures $ python3 segment-tree.py
+#['9', '6', '3', '2', '4', '2', '1', '-1', '3', 'None', 'None', '0', '2', 'None', 'None', 'None']
+#9
+#3
+#['9', '6', '3', '1', '3', '1', '1', '-1', '3', 'None', 'None', '0', '2', 'None', 'None', 'None']
+#/Users/andrew/Documents/Dev/Data Structures $ python3 segment-tree.py
+#['9', '6', '3', '2', '4', '2', '1', '-1', '3', 'None', 'None', '0', '2', 'None', 'None', 'None']
+#9
+#3
+#['9', '6', '3', '1', '3', '1', '1', '-1', '3', 'None', 'None', '0', '2', 'None', 'None', 'None']
+#/Users/andrew/Documents/Dev/Data Structures $
         node = self.tree[current_index]
         if end < node.start or start > node.end:
             return node
         elif start == end:
-            # Test this to make sure it actually changes the tree index
-            node = functor(node, args)
+            if len(args) != 0:
+                node = functor(node, args)
+            else:
+                node = functor(node)
             return node
         else:
             midpoint = int((start+end)/2)
@@ -286,8 +314,13 @@ class SegmentTree:
 if __name__ == "__main__":
     data = [-1, 3, 4, 0, 2, 1]
     tree = SegmentTree(data, SegmentNode)
-#    print(list(map(str, tree.tree)))
+    print(list(map(str, tree.tree)))
     print(str(tree.query(0, 1, 4)))
     print(str(tree.query(0, 1, 1)))
-    tree.update(tree.tree[0], 3, -1)
+    
+    def update_functor(node):
+        node.value -= 1
+        return node
+    
+    tree.update(0, 1, 4, update_functor)
     print(list(map(str, tree.tree)))
