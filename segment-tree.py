@@ -228,16 +228,8 @@ class SegmentTree:
             left_node (SegmentNode):    The first node to merge. left_node would win any ties with right_node
             right_node (SegmentNode):   The second node to merge.
         """
-#        print("Left Node is: "+str(left_node)+"\n")
-#        print("Right Node is: "+str(right_node)+"\n\n")
-#        if left_node is not None and right_node is None:
-#            return left_node
-#        elif left_node is None and right_node is not None:
-#            return right_node
-#        else:
         return left_node + right_node
     
-# Indices seem to be accelerated by one
     def update(self, current_index, start, end, functor, *args):
         """
         This function updates the segment tree when a range of indices in the data set
@@ -248,13 +240,13 @@ class SegmentTree:
         value is itself an object. It is crucial that the return value of functor is of
         type SegmentNode
         
-        The way the tree is updated is as follows. It is very similar to the build function:
+        The way the tree is updated is as follows:
         
-        If the node's interval is completely outside of the query interval, then no update
-        needs to be performed, and the node is returned un-modified.
+        If the node's interval is completely overlapped by the update interval, and it 
+        is also a leaf node, run functor() on the node to update its value. 
         
-        Otherwise, if start == end, the node is a leaf node, and its value should be updated
-        by running functor on the node. 
+        Otherwise, if the update interval is completly outside the node's interval,
+        no update needs to be made.
         
         Otherwise, recurse on the left and right children, which will propagate down to 
         the leaves, and then re-build the relevant nodes as it comes back up the
@@ -274,52 +266,35 @@ class SegmentTree:
             SegmentNode:    The current node of the tree. In practicality, this is a void function,
                             but the node is returned as a convenience for future use cases
         """
-        
-        # The algorithm itself works great. There are two problems:
-        #       1. The start and end parameters get out of sync with the node intervals
-        #       2. The values are correct inside the function, but the actual data structure
-        #           doesn't get updated every time
-        
-        # I'm not sure if this works. Some of the tree gets updated and some doesn't. The leaves work but that's it
+        # This alias works for property reference, but when the new node is created,
+        # it must be assigned to self.tree[current_index] NOT the node variable. This is
+        # because Python's variables are just names for certain values. When we alias
+        # self.tree[current_index], 'node' will point to the value that's there. However,
+        # when we assign 'node' a new value, the variable will point to that value instead,
+        # and self.tree[current_index] (the actual node inside the tree) will still point to
+        # the original value.
         node = self.tree[current_index]
-        print("Starting value of node is: "+str(id(node)))
-#        print ("The current node's value is: "+str(node.value))
-#        print ("The range of the node is: "+str(node.start)+" through "+str(node.end))
-#        print ("The range of the function call is: "+str(start)+" through "+str(end))
-#        print ()
         if start <= node.start and end >= node.end and node.start == node.end:
                 if len(args) != 0:
                     self.tree[current_index] = functor(node, args)
                 else:
-#                    print ("The node is a leaf, and the value will be changed")
-#                    print ("The recursive interval is "+str(start)+" through "+str(end))
-#                    self.tree[current_index] = functor(node)
-                    node = functor(node)
-                    print("Ending value of node is: "+str(id(node)))
-#                    print("The new value is: "+str(node))
-#                    print ()
+                    self.tree[current_index] = functor(node)
                 return self.tree[current_index]
             
         elif end < node.start or start > node.end:
-#            print ("The node doesn't need to be updated")
-#            print ()
-            return node
+            return self.tree[current_index]
             
         else:
-#            print ("The node isn't a leaf and no total overlap, so it will be merged with its children")
-#            self.tree[current_index] = self.merge(self.update(current_index*2+1, start, end, functor),
-            node = self.merge(self.update(current_index*2+1, start, end, functor),
+            self.tree[current_index] = self.merge(self.update(current_index*2+1, start, end, functor),
                                                   self.update(current_index*2+2, start, end, functor))
-#            print ("The new value is: "+str(node)+" for node "+str(node.start)+" through "+str(node.end))
-            print("Ending value of node is: "+str(id(node)))
             return self.tree[current_index]
     
 if __name__ == "__main__":
     data = [-1, 3, 4, 0, 2, 1]
     tree = SegmentTree(data, SegmentNode)
     print(list(map(str, tree.tree)))
-#    print(str(tree.query(0, 1, 4)))
-#    print(str(tree.query(0, 1, 1)))
+    print(str(tree.query(0, 1, 4)))
+    print(str(tree.query(0, 1, 1)))
     
     def update_functor(node):
         node.value -= 1
@@ -327,3 +302,6 @@ if __name__ == "__main__":
     
     tree.update(0, 1, 4, update_functor)
     print(list(map(str, tree.tree)))
+    
+    print(str(tree.query(0, 1, 4)))
+    print(str(tree.query(0, 1, 1)))
